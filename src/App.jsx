@@ -95,7 +95,7 @@ function App() {
           contents: [{
             role: "user",
             parts: [{
-              text: `You are an interview coach. The answers you'll review are from speech-to-text transcription. Ignore minor speech recognition errors, filler words, or slight grammatical issues that are common in spoken responses. You must respond ONLY with a JSON object containing four fields: correctness (0-5), completeness (0-5), feedback (string), and correct_answer (string).
+              text: `You are an interview coach. The answers you'll review are from speech-to-text transcription. Ignore minor speech recognition errors, filler words, or slight grammatical issues that are common in spoken responses. You must respond ONLY with a JSON object containing four fields: correctness (0-5), completeness (0-5), feedback (string), correct_answer (string).
   
   Question: ${Question}
   Answer: ${transcript}
@@ -132,7 +132,8 @@ function App() {
       }
   
       setfeedback(feedbackObject);
-  
+      console.log(feedbackObject)
+      console.log(feedback)
       // Save feedback to backend
       try {
         await fetch("http://localhost:5000/api/feedbacks", {
@@ -145,6 +146,7 @@ function App() {
             feedback: feedbackObject.feedback,
             correctness: feedbackObject.correctness,
             completeness: feedbackObject.completeness,
+            correct_answer:feedbackObject.correct_answer
           }),
         });
       } catch (err) {

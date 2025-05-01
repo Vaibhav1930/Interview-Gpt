@@ -7,6 +7,7 @@ const feedbackSchema = new mongoose.Schema({
   feedback: String,
   correctness: Number,
   completeness: Number,
+  correct_answere:String,
   createdAt: { type: Date, default: Date.now },
 });
 

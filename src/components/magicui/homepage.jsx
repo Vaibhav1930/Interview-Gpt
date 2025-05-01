@@ -1,8 +1,9 @@
 import React from 'react';
 import { TypingAnimation } from "./typing-animation";
 
-function Homepage({ feedbackloadingStatus, feedback, handleStartListening, handleStopListening, islistening, handleReattempt, getQuestion, transcript, questionStatus, Question }) {
+function Homepage({feedbackloadingStatus, feedback, handleStartListening, handleStopListening, islistening, handleReattempt, getQuestion, transcript, questionStatus, Question }) {
   return (
+    
     <div className="flex flex-1">
       <div className={`max-w-4xl mx-auto ${feedbackloadingStatus || feedback ? "flex" : "text-center"} w-full`}>
 
@@ -41,10 +42,10 @@ function Homepage({ feedbackloadingStatus, feedback, handleStartListening, handl
 
         <div className={`transition-all ${feedbackloadingStatus || feedback ? "w-1/2 border-l h-screen p-5" : "w-0"}`}>
           {feedback && (
-            <div className="mt-24">
+            <div className="">
               <p>{feedbackloadingStatus && "Let's see how you answered"}</p>
-
-              <div className="border p-3 rounded-lg">
+              <div className="flex gap-2">
+              <div className="border rounded-lg w-1/2 shadow">
                 <div>Correctness</div>
                 <h1>{feedback.correctness}</h1>
                 <div className="flex gap-1 mt-2">
@@ -54,7 +55,7 @@ function Homepage({ feedbackloadingStatus, feedback, handleStartListening, handl
                 </div>
               </div>
 
-              <div className="border py-3 p-3 rounded-lg mt-4">
+              <div className="border rounded-lg w-1/2">
                 <div>Completeness</div>
                 <h1>{feedback.completeness}</h1>
                 <div className="flex gap-1 mt-2">
@@ -63,9 +64,11 @@ function Homepage({ feedbackloadingStatus, feedback, handleStartListening, handl
                   ))}
                 </div>
               </div>
-
-              <p className="mt-5">{feedback.feedback}</p>
-              <p className="mt-5">{feedback.correct_answere}</p>
+                </div>              
+              <p className="mt-3 font-bold text-2xl">Feedback </p>
+              <p className="border-2 p-1 h-36 overflow-y-scroll">{feedback.feedback}</p>
+              <p className="mt-3 font-bold text-2xl">Correct Answer </p>
+              <p className="border-2 p-1 h-56 overflow-y-scroll">{feedback.correct_answer}</p>
             </div>
           )}
         </div>
