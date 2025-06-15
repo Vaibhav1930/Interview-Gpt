@@ -21,7 +21,7 @@ recognition.interimResults = true;
 
 // Instantiate model safely
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-04-17' });
 
 function App() {
   const [islistening, setIsListening] = useState(false);
@@ -32,6 +32,8 @@ function App() {
   const [Question, setQuestion] = useState(null);
   const [questionStatus, setQuestionStatus] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState("");
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [close,setClose]=useState(false)
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const { user } = useUser();
   const navigate = useNavigate();
@@ -70,7 +72,7 @@ function App() {
     setTranscript("");
     try {
       const result = await model.generateContent([
-        `Generate a new, random ${selectedTopic} js theoretical simple and easy difference interview question. Ensure the question is unique and different from the previous ones. Return only the question in plain text.`,
+        `Generate a new, random ${selectedTopic} theoretical simple and easy difference interview question. Ensure the question is unique and different from the previous ones. Return only the question in plain text.`,
       ]);
       const response = await result.response.text();
       setQuestion(response);
@@ -86,7 +88,7 @@ function App() {
     setfeedbackloadingStatus(true);
   
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,7 +211,7 @@ function App() {
 
       <SignedIn>
         <div className="flex h-screen w-screen overflow-hidden bg-white">
-          <Sidebar />
+          <Sidebar onSelectFeedback={setSelectedFeedback} setClose={setClose} />
 
           <div className="flex flex-col flex-1 h-full overflow-hidden">
             <div className="mt-2 h-12 flex items-center justify-between bg-neutral-300/70 pl-16 pr-10 rounded-full">
@@ -248,6 +250,10 @@ function App() {
             transcript={transcript}
             questionStatus={questionStatus}
             Question={Question}
+            selectedFeedback={selectedFeedback}
+            close={close}
+            setClose={setClose}
+            topic={selectedTopic}
           />
         } />
             </Routes>
