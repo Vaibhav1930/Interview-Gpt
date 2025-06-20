@@ -8,4 +8,5 @@ function messagebox({question,onClick}) {
   ) 
 }
 
-export default messagebox
+export default React.memo(messagebox);
+

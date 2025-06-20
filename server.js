@@ -27,9 +27,9 @@ app.post("/api/feedbacks", async (req, res) => {
     res.status(500).json({ error: "Error saving feedback" });
   }
 });
-app.get("/api/feedbacks", async (req, res) => {
+app.get("/api/feedbacks/:username", async (req, res) => {
   try {
-    const feedbacks = await Feedback.find();
+    const feedbacks = await Feedback.find({ name: req.params.username });
     console.log(feedbacks); // Log the data
     res.status(200).json(feedbacks);
   } catch (err) {
