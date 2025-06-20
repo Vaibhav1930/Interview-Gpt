@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap:https://interview-gpt-6alf.vercel.app/sitemap.xml
