@@ -12,6 +12,11 @@ import Display from './components/magicui/display';
 import { Routes, Route } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import { Helmet } from "react-helmet";
+
+<Helmet>
+  <link rel="preload" as="image" href="/assets/logo.webp" type="image/webp" />
+</Helmet>
 
 
 
