@@ -19,7 +19,19 @@ function Landingpage() {
 
           <div className="flex flex-col-reverse lg:flex-row w-full h-full mt-6 lg:mt-0">
             <div className="w-full lg:w-2/5 h-[90%] flex justify-center items-center relative">
-              <img src={Logo} className="w-52 sm:w-72 md:w-80 lg:w-96 mt-10 rounded-full" alt="Logo" />
+              <img src="/assets/logo-n_7j5y68.webp"
+  srcSet="
+    /assets/logo-n_7j5y68-208.webp 208w,
+    /assets/logo-n_7j5y68-288.webp 288w,
+    /assets/logo-n_7j5y68-320.webp 320w,
+    /assets/logo-n_7j5y68-384.webp 384w
+  "
+  sizes="(max-width: 640px) 208px,
+         (max-width: 768px) 288px,
+         (max-width: 1024px) 320px,
+         384px"
+  class="w-52 sm:w-72 md:w-80 lg:w-96 mt-10 rounded-full"
+  alt="Logo" />
             </div>
 
             <div className="w-full lg:w-1/2 h-[90%] flex items-center justify-center px-6">
