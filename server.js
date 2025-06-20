@@ -17,7 +17,7 @@ mongoose.connect(process.env.VITE_MONGODB_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error(err));
 
-app.post("/api/feedbacks", async (req, res) => {
+app.post("https://interview-gpt.onrender.com/api/feedbacks", async (req, res) => {
   try {
     const feedback = new Feedback(req.body);
     await feedback.save();
@@ -27,7 +27,7 @@ app.post("/api/feedbacks", async (req, res) => {
     res.status(500).json({ error: "Error saving feedback" });
   }
 });
-app.get("/api/feedbacks", async (req, res) => {
+app.get("https://interview-gpt.onrender.com/api/feedbacks", async (req, res) => {
   try {
     const feedbacks = await Feedback.find();
     console.log(feedbacks); // Log the data
@@ -38,7 +38,7 @@ app.get("/api/feedbacks", async (req, res) => {
   }
 });
 
-app.delete("/api/feedbacks/:username", async (req, res) => {
+app.delete("https://interview-gpt.onrender.com/api/feedbacks/:username", async (req, res) => {
   const { username } = req.params;
   try {
     await Feedback.deleteMany({ name: username });
