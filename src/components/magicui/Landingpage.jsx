@@ -19,12 +19,12 @@ function Landingpage() {
 
           <div className="flex flex-col-reverse lg:flex-row w-full h-full mt-6 lg:mt-0">
             <div className="w-full lg:w-2/5 h-[90%] flex justify-center items-center relative">
-              <img src="/assets/logo-n_7j5y68.webp"
+              <img src="/components/magicui/logo.webp"
   srcSet="
-    /assets/logo-n_7j5y68-208.webp 208w,
-    /assets/logo-n_7j5y68-288.webp 288w,
-    /assets/logo-n_7j5y68-320.webp 320w,
-    /assets/logo-n_7j5y68-384.webp 384w
+    /components/magicui/logo.webp 208w,
+    /components/magicui/logo.webp 288w,
+    /components/magicui/logo.webp 320w,
+    /components/magicui/logo.webp 384w
   "
   sizes="(max-width: 640px) 208px,
          (max-width: 768px) 288px,
