@@ -27,7 +27,7 @@ export default function Sidebar({ onSelectFeedback, setClose }) {
   // Fetch feedbacks on component mount and when user changes
   useEffect(() => {
     if (!user) return;
-    fetch(`api/feedbacks`)
+    fetch(`/api/feedbacks`)
       .then((res) => res.json())
       .then((data) => {
         setFeedbacks(data);
@@ -42,7 +42,7 @@ export default function Sidebar({ onSelectFeedback, setClose }) {
     const confirmed = window.confirm("Are you sure you want to clear all chats?");
     if (!confirmed || !user) return;
     try {
-      await axios.delete(`api/feedbacks/${user.username}`);
+      await axios.delete(`/api/feedbacks/${user.username}`);
       setFeedbacks([]);
       console.log("Feedbacks cleared");
     } catch (error) {
