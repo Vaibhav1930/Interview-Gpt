@@ -8,7 +8,11 @@ import { Fragment } from "react";
 dotenv.config();
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://interview-gpt-6alf.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
