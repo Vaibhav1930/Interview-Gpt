@@ -26,7 +26,7 @@ recognition.interimResults = true;
 
 // Instantiate model safely
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-Pro' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
 
 function App() {
   const [islistening, setIsListening] = useState(false);
@@ -93,7 +93,7 @@ function App() {
     setfeedbackloadingStatus(true);
   
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-Pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
