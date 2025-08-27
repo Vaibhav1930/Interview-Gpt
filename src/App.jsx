@@ -11,7 +11,6 @@ import Homepage from './components/magicui/homepage';
 import Display from './components/magicui/display';
 import { Helmet } from "react-helmet";
 
-// ✅ Preload logo
 <Helmet>
   <link rel="preload" as="image" href="/assets/logo.webp" type="image/webp" />
 </Helmet>
