@@ -146,7 +146,7 @@ Answer: ${transcript}`
       setfeedback(feedbackObject);
 
       // Save feedback to backend
-      await fetch("http://localhost:5000/api/feedbacks", {
+      await fetch("https://interview-gpt.onrender.com/api/feedbacks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
