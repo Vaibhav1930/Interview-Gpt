@@ -71,22 +71,29 @@ function App() {
     await getFeedback();
   };
 
-  const getQuestion = async () => {
-    setQuestionStatus(true);
-    setReAttempt(null);
-    setTranscript("");
+  async function generateWithRetry(prompt, retries = 3) {
+  const proModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+
+  for (let i = 0; i < retries; i++) {
     try {
-      const result = await model.generateContent([
-        `Generate a new, random ${selectedTopic} theoretical simple and easy difference interview question. Ensure the question is unique and different from the previous ones. Return only the question in plain text.`,
-      ]);
-      const response = await result.response.text();
-      setQuestion(response);
-    } catch (error) {
-      console.error("Error fetching question:", error);
-    } finally {
-      setQuestionStatus(false);
+      const result = await proModel.generateContent(prompt);
+      return result.response.text();
+    } catch (err) {
+      if (err.status === 503 && i < retries - 1) {
+        console.warn(`503 from Gemini Pro. Retrying in ${2 ** i}s...`);
+        await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+      } else if (err.status === 503) {
+        console.warn("⚠️ Gemini Pro overloaded. Falling back to Flash...");
+        const flashModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const fallback = await flashModel.generateContent(prompt);
+        return fallback.response.text();
+      } else {
+        throw err;
+      }
     }
-  };
+  }
+}
+
 
   const getFeedback = async () => {
     if (!transcript.trim()) return;
