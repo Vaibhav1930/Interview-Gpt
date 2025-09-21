@@ -9,6 +9,7 @@ import Homepage from './components/magicui/homepage';
 import Display from './components/magicui/display';
 import { Helmet } from "react-helmet";
 
+
 // ✅ Helmet preload for logo
 <Helmet>
   <link rel="preload" as="image" href="/assets/logo.webp" type="image/webp" />
@@ -57,7 +58,7 @@ function App() {
   const [selectedTopic, setSelectedTopic] = useState("");
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [close, setClose] = useState(false);
-
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const { user } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
@@ -150,7 +151,7 @@ Format exactly like this:
       setfeedback(feedbackObject);
 
       // Save feedback to backend
-      await fetch("https://interview-gpt.onrender.com/api/feedbacks", {
+      await fetch(`${BACKEND_URL}/api/feedbacks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
