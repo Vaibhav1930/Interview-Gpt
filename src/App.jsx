@@ -23,7 +23,7 @@ recognition.interimResults = true;
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 // ✅ Helper function with model override
-async function generateWithRetry(prompt, modelName = "gemini-2.5-pro", retries = 3) {
+async function generateWithRetry(prompt, modelName = "gemini-1.5-flash", retries = 3) {
   const model = genAI.getGenerativeModel({ model: modelName });
 
   for (let i = 0; i < retries; i++) {

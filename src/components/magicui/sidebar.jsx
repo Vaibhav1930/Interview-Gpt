@@ -27,7 +27,7 @@ export default function Sidebar({ onSelectFeedback, setClose }) {
   // Fetch feedbacks on component mount and when user changes
   useEffect(() => {
     if (!user) return;
-    fetch(`http://localhost:5000/api/feedbacks`)
+    fetch(`https://interview-gpt.onrender.com/api/feedbacks`)
       .then((res) => res.json())
       .then((data) => {
         setFeedbacks(data);
