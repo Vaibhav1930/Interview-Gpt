@@ -42,7 +42,7 @@ export default function Sidebar({ onSelectFeedback, setClose }) {
     const confirmed = window.confirm("Are you sure you want to clear all chats?");
     if (!confirmed || !user) return;
     try {
-      await axios.delete(`/api/feedbacks/:username`);
+      await axios.delete(`https://interview-gpt.onrender.com/api/feedbacks/${user.username}`);
       setFeedbacks([]);
       console.log("Feedbacks cleared");
     } catch (error) {
