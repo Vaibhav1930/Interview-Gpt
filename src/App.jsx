@@ -96,7 +96,7 @@ function App() {
     try {
       const response = await generateWithRetry(
         `Generate a new, random ${selectedTopic} theoretical interview question. Ensure it's simple, unique, and plain text only.`,
-        "gemini-2.5-pro"
+        "gemini-1.5-flash"
       );
       setQuestion(response);
       setClose(false); // reopen feedback panel for new question
