@@ -1,32 +1,50 @@
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import React, { useEffect, useState } from 'react';
-import { FlickeringGrid } from "./components/magicui/flickering-grid";
-import { Link } from "react-router-dom";
+import { Link, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { TypingAnimation } from "./components/magicui/typing-animation";
 import Landingpage from './components/magicui/Landingpage';
 import Sidebar from './components/magicui/sidebar';
 import { useUser } from "@clerk/clerk-react";
 import Homepage from './components/magicui/homepage';
 import Display from './components/magicui/display';
-import { Routes, Route } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 import { Helmet } from "react-helmet";
 
+// ✅ Helmet preload for logo
 <Helmet>
   <link rel="preload" as="image" href="/assets/logo.webp" type="image/webp" />
 </Helmet>
 
-
-
+// 🎤 Speech Recognition
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.continuous = true;
 recognition.interimResults = true;
 
-// Instantiate model safely
+// 🤖 Gemini setup
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-04-17' });
+
+// ✅ Helper function with model override
+async function generateWithRetry(prompt, modelName = "gemini-2.5-pro", retries = 3) {
+  const model = genAI.getGenerativeModel({ model: modelName });
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+    } catch (err) {
+      if (err.status === 503 && i < retries - 1) {
+        console.warn(`503 from ${modelName}. Retrying in ${2 ** i}s...`);
+        await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+      } else if (err.status === 503 && modelName !== "gemini-1.5-flash") {
+        console.warn(`⚠️ ${modelName} overloaded. Falling back to Flash...`);
+        const flashModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const fallback = await flashModel.generateContent(prompt);
+        return fallback.response.text();
+      } else {
+        throw err;
+      }
+    }
+  }
+}
 
 function App() {
   const [islistening, setIsListening] = useState(false);
@@ -38,12 +56,11 @@ function App() {
   const [questionStatus, setQuestionStatus] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState("");
   const [selectedFeedback, setSelectedFeedback] = useState(null);
-  const [close,setClose]=useState(false)
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const [close, setClose] = useState(false);
+
   const { user } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
-
 
   const topics = [
     "Python", "JavaScript", "Java", "C++", "C#", "Go", "Ruby",
@@ -56,9 +73,8 @@ function App() {
   const handleChange = (e) => {
     const topic = e.target.value;
     setSelectedTopic(topic);
-    navigate("/interview"); // navigate to homepage after setting topic
+    navigate("/interview");
   };
-  
 
   const handleStartListening = () => {
     setIsListening(true);
@@ -71,115 +87,102 @@ function App() {
     await getFeedback();
   };
 
+  // ✅ Question Generation (Pro)
   const getQuestion = async () => {
     setQuestionStatus(true);
     setReAttempt(null);
     setTranscript("");
     try {
-      const result = await model.generateContent([
-        `Generate a new, random ${selectedTopic} theoretical simple and easy difference interview question. Ensure the question is unique and different from the previous ones. Return only the question in plain text.`,
-      ]);
-      const response = await result.response.text();
+      const response = await generateWithRetry(
+        `Generate a new, random ${selectedTopic} theoretical interview question. Ensure it's simple, unique, and plain text only.`,
+        "gemini-2.5-pro"
+      );
       setQuestion(response);
     } catch (error) {
       console.error("Error fetching question:", error);
+      setQuestion("⚠️ Gemini is overloaded. Please retry later.");
     } finally {
       setQuestionStatus(false);
     }
   };
 
+  // ✅ Feedback Generation (Flash)
   const getFeedback = async () => {
     if (!transcript.trim()) return;
     setfeedbackloadingStatus(true);
-  
+
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            role: "user",
-            parts: [{
-              text: `You are an interview coach. The answers you'll review are from speech-to-text transcription. Ignore minor speech recognition errors, filler words, or slight grammatical issues that are common in spoken responses. You must respond ONLY with a JSON object containing four fields: correctness (0-5), completeness (0-5), feedback (string), correct_answer (string).
-  
-  Question: ${Question}
-  Answer: ${transcript}
-  
-  Respond only with the JSON object. Do NOT include code blocks like \`\`\`json.`
-            }]
-          }]
-        }),
-      });
-  
-      if (response.status === 429) {
-        console.warn('Rate limit hit, try slowing down.');
-      }
-  
-      const data = await response.json();
-      const modelResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data);
-  
-      let cleanedResponse = modelResponse.trim();
-      if (cleanedResponse.startsWith('```')) {
+      const responseText = await generateWithRetry(
+        `You are an interview coach. Analyze the following response.
+
+Question: ${Question}
+Answer: ${transcript}
+
+Return ONLY valid JSON, no explanations, no markdown. 
+Format exactly like this:
+{
+  "correctness": 0-5,
+  "completeness": 0-5,
+  "feedback": "string",
+  "correct_answer": "string"
+}`,
+        "gemini-1.5-flash"
+      );
+
+      let cleanedResponse = responseText.trim();
+      if (cleanedResponse.startsWith("```")) {
         cleanedResponse = cleanedResponse.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
       }
-  
+
       let feedbackObject;
       try {
         feedbackObject = JSON.parse(cleanedResponse);
       } catch (parseError) {
-        console.error('Error parsing model response:', cleanedResponse);
+        console.error("Error parsing model response:", cleanedResponse);
         feedbackObject = {
           correctness: 0,
           completeness: 0,
-          feedback: "Could not parse feedback correctly. Please try again.",
-          correct_answer: "Ideal answer not available."
+          feedback: "⚠️ Invalid model response. Please retry.",
+          correct_answer: "N/A"
         };
       }
-  
+
       setfeedback(feedbackObject);
-      console.log(feedbackObject)
-      console.log(feedback)
+
       // Save feedback to backend
-      try {
-        await fetch("http://localhost:5000/api/feedbacks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: user.username,
-            question: Question,
-            answer: transcript,
-            feedback: feedbackObject.feedback,
-            correctness: feedbackObject.correctness,
-            completeness: feedbackObject.completeness,
-            correct_answer:feedbackObject.correct_answer
-          }),
-        });
-      } catch (err) {
-        console.error("Failed to save feedback to backend:", err);
-      }
-  
+      await fetch("https://interview-gpt.onrender.com/api/feedbacks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: user.username,
+          question: Question,
+          answer: transcript,
+          feedback: feedbackObject.feedback,
+          correctness: feedbackObject.correctness,
+          completeness: feedbackObject.completeness,
+          correct_answer: feedbackObject.correct_answer
+        }),
+      });
+
     } catch (error) {
       console.error("Error fetching feedback:", error);
       setfeedback({
         correctness: 0,
         completeness: 0,
-        feedback: "Error fetching feedback.",
-        correct_answer: "Ideal answer not available."
+        feedback: "⚠️ Error fetching feedback.",
+        correct_answer: "N/A"
       });
     } finally {
       setfeedbackloadingStatus(false);
     }
   };
-  
 
   const handleReattempt = () => {
     setfeedback(null);
     handleStartListening();
   };
 
-  // Attach recognition events once
+  // 🎤 Speech recognition listeners
   useEffect(() => {
     recognition.onresult = (e) => {
       let finalTranscript = '';
@@ -188,25 +191,24 @@ function App() {
       }
       setTranscript(finalTranscript);
     };
-
-    recognition.onend = async () => {
-      if (islistening) {
-        setIsListening(false);
-      }
+    recognition.onend = () => {
+      if (islistening) setIsListening(false);
     };
   }, []);
 
+  // Auto-generate question when topic selected
   useEffect(() => {
     if (selectedTopic && window.location.pathname === "/interview") {
       getQuestion();
     }
   }, [selectedTopic]);
-  useEffect(()=>{
-    if (location.pathname==="/"){
+
+  useEffect(() => {
+    if (location.pathname === "/") {
       setSelectedTopic("");
     }
-  },[location.pathname]);
-  
+  }, [location.pathname]);
+
   return (
     <>
       <header>
@@ -220,9 +222,7 @@ function App() {
 
           <div className="flex flex-col flex-1 h-full overflow-hidden">
             <div className="mt-2 h-12 flex items-center justify-between bg-neutral-300/70 pl-16 pr-10 rounded-full">
-              <Link to="/">
-                <h1 className="text-4xl text-black">Interview GPT</h1>
-              </Link>
+              <Link to="/"><h1 className="text-4xl text-black">Interview GPT</h1></Link>
               <div className="flex gap-2 items-center">
                 <label htmlFor="topic-select" className="sr-only">Select a topic</label>
                 <select
@@ -233,34 +233,33 @@ function App() {
                 >
                   <option className='text-sm' value="" disabled>Select a topic</option>
                   {topics.map((topic, index) => (
-                    <option key={index} value={topic}>
-                      {topic}
-                    </option>
+                    <option key={index} value={topic}>{topic}</option>
                   ))}
                 </select>
                 <UserButton />
               </div>
             </div>
+
             <Routes>
-            <Route path="/" element={<Display />} />
-            <Route path="/interview" element={
-          <Homepage
-            feedbackloadingStatus={feedbackloadingStatus}
-            feedback={feedback}
-            handleStartListening={handleStartListening}
-            handleStopListening={handleStopListening}
-            islistening={islistening}
-            handleReattempt={handleReattempt}
-            getQuestion={getQuestion}
-            transcript={transcript}
-            questionStatus={questionStatus}
-            Question={Question}
-            selectedFeedback={selectedFeedback}
-            close={close}
-            setClose={setClose}
-            topic={selectedTopic}
-          />
-        } />
+              <Route path="/" element={<Display />} />
+              <Route path="/interview" element={
+                <Homepage
+                  feedbackloadingStatus={feedbackloadingStatus}
+                  feedback={feedback}
+                  handleStartListening={handleStartListening}
+                  handleStopListening={handleStopListening}
+                  islistening={islistening}
+                  handleReattempt={handleReattempt}
+                  getQuestion={getQuestion}
+                  transcript={transcript}
+                  questionStatus={questionStatus}
+                  Question={Question}
+                  selectedFeedback={selectedFeedback}
+                  close={close}
+                  setClose={setClose}
+                  topic={selectedTopic}
+                />
+              } />
             </Routes>
           </div>
         </div>

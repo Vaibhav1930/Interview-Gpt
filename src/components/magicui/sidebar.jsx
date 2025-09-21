@@ -42,7 +42,7 @@ export default function Sidebar({ onSelectFeedback, setClose }) {
     const confirmed = window.confirm("Are you sure you want to clear all chats?");
     if (!confirmed || !user) return;
     try {
-      await axios.delete(`http://localhost:5000/api/feedbacks/${user.username}`);
+      await axios.delete(`/api/feedbacks/:username`);
       setFeedbacks([]);
       console.log("Feedbacks cleared");
     } catch (error) {
