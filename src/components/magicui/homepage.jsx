@@ -188,7 +188,14 @@ function Homepage({
               )}
             </div>
 
-            
+            {selectedFeedback && !close && (
+              <div className="p-4 w-[65vw] bg-gray-100 text-left">
+                <h2 className="text-xl font-bold">Selected Feedback</h2>
+                <p className="mt-2"><strong>Question:</strong> {selectedFeedback.question}</p>
+                <p className="mt-2"><strong>Answer:</strong> {selectedFeedback.answer}</p>
+                <p className="mt-2"><strong>Feedback:</strong> {selectedFeedback.feedback}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
