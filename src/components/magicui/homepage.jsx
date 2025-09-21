@@ -21,6 +21,7 @@ const Waveform = ({ isListening }) => {
 };
 
 function Homepage({
+  setSelectedFeedback,
   selectedFeedback,
   feedbackloadingStatus,
   feedback,
@@ -48,7 +49,7 @@ function Homepage({
             <div className="p-5 bg-gray-100 text-left">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Selected Feedback</h2>
-                <span onClick={() => setClose(true)}>❌</span>
+                <span onClick={() => setSelectedFeedback(null)}>❌</span>
               </div>
               <p className="mt-2"><strong>Question:</strong> {selectedFeedback.question}</p>
               <p className="mt-2"><strong>Answer:</strong> {selectedFeedback.answer}</p>
@@ -135,6 +136,19 @@ function Homepage({
 
               {!feedbackloadingStatus && feedback && (
                 <div>
+                  {/* Close Button */}
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-bold text-lg">Your Feedback</p>
+                    <button
+                      onClick={() => {
+                        setClose(true);
+                      }}
+                      className="text-gray-600 hover:text-black"
+                    >
+                      ✖
+                    </button>
+                  </div>
+
                   <div className="flex gap-2">
                     {/* Correctness */}
                     <div className="border rounded-lg w-1/2 shadow p-2">
@@ -190,7 +204,10 @@ function Homepage({
 
             {selectedFeedback && !close && (
               <div className="p-4 w-[65vw] bg-gray-100 text-left">
+                <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Selected Feedback</h2>
+                <span onClick={() => setSelectedFeedback(null)}>❌</span>
+              </div>
                 <p className="mt-2"><strong>Question:</strong> {selectedFeedback.question}</p>
                 <p className="mt-2"><strong>Answer:</strong> {selectedFeedback.answer}</p>
                 <p className="mt-2"><strong>Feedback:</strong> {selectedFeedback.feedback}</p>

@@ -9,7 +9,6 @@ import Homepage from './components/magicui/homepage';
 import Display from './components/magicui/display';
 import { Helmet } from "react-helmet";
 
-
 // ✅ Helmet preload for logo
 <Helmet>
   <link rel="preload" as="image" href="/assets/logo.webp" type="image/webp" />
@@ -23,7 +22,7 @@ recognition.interimResults = true;
 // 🤖 Gemini setup
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
-// ✅ Helper function with model override
+// ✅ Helper with model override
 async function generateWithRetry(prompt, modelName = "gemini-1.5-flash", retries = 3) {
   const model = genAI.getGenerativeModel({ model: modelName });
 
@@ -58,6 +57,7 @@ function App() {
   const [selectedTopic, setSelectedTopic] = useState("");
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [close, setClose] = useState(false);
+
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const { user } = useUser();
   const navigate = useNavigate();
@@ -99,6 +99,7 @@ function App() {
         "gemini-2.5-pro"
       );
       setQuestion(response);
+      setClose(false); // reopen feedback panel for new question
     } catch (error) {
       console.error("Error fetching question:", error);
       setQuestion("⚠️ Gemini is overloaded. Please retry later.");
@@ -149,6 +150,7 @@ Format exactly like this:
       }
 
       setfeedback(feedbackObject);
+      setClose(false); // ensure panel opens when feedback arrives
 
       // Save feedback to backend
       await fetch(`${BACKEND_URL}/api/feedbacks`, {
@@ -181,6 +183,11 @@ Format exactly like this:
   const handleReattempt = () => {
     setfeedback(null);
     handleStartListening();
+  };
+
+  const handleCloseFeedback = () => {
+    setClose(true);
+    setfeedback(null); // clear feedback when closing
   };
 
   // 🎤 Speech recognition listeners
@@ -257,8 +264,9 @@ Format exactly like this:
                   Question={Question}
                   selectedFeedback={selectedFeedback}
                   close={close}
-                  setClose={setClose}
+                  setClose={handleCloseFeedback} // ✅ pass close handler
                   topic={selectedTopic}
+                  setSelectedFeedback={setSelectedFeedback}
                 />
               } />
             </Routes>
