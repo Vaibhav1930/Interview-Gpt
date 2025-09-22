@@ -14,10 +14,9 @@ recognition.interimResults = true;
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
-// ✅ Retry helper with fallback
+// ✅ Retry helper
 async function generateWithRetry(prompt, modelName = "gemini-1.5-flash", retries = 3) {
   let lastError = null;
-
   for (let i = 0; i < retries; i++) {
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
@@ -74,6 +73,7 @@ function ResumeInterview() {
   const [resumeValid, setResumeValid] = useState(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isInterviewActive, setIsInterviewActive] = useState(false);
+  const [interviewStartTime, setInterviewStartTime] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [interviewComplete, setInterviewComplete] = useState(false);
@@ -85,7 +85,7 @@ function ResumeInterview() {
   const [loadingQuestion, setLoadingQuestion] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
 
-  const MAX_QUESTIONS = 6;
+  const INTERVIEW_DURATION = 20 * 60 * 1000; // 20 minutes in ms
 
   // 🎤 Recognition
   useEffect(() => {
@@ -101,7 +101,7 @@ function ResumeInterview() {
     };
   }, [islistening, timeLeft]);
 
-  // ⏳ Timer
+  // ⏳ Answer timer
   useEffect(() => {
     if (islistening && timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -112,11 +112,23 @@ function ResumeInterview() {
     }
   }, [islistening, timeLeft]);
 
+  // ⏳ 20-min Interview timer
+  useEffect(() => {
+    if (!interviewStartTime || !isInterviewActive) return;
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - interviewStartTime;
+      if (elapsed >= INTERVIEW_DURATION) {
+        clearInterval(timer);
+        endInterview();
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [interviewStartTime, isInterviewActive]);
+
   // ✅ Resume Validation
   const validateResume = async () => {
     const keywords = ["experience", "education", "skills", "projects", "internship"];
     const content = resumeContent.toLowerCase();
-
     if (resumeContent.length < 200 || resumeContent.split("\n").length < 2) {
       setResumeValid(false);
       return false;
@@ -125,7 +137,6 @@ function ResumeInterview() {
       setResumeValid(false);
       return false;
     }
-
     const prompt = `
 Check if the following text is a valid resume.
 Respond ONLY with one word: "valid" or "invalid".
@@ -135,7 +146,6 @@ ${resumeContent}
     `;
     const response = await generateWithRetry(prompt, "gemini-1.5-flash");
     const normalized = response.trim().toLowerCase();
-
     if (normalized.includes("valid") && !normalized.includes("invalid")) {
       setResumeValid(true);
       return true;
@@ -145,31 +155,45 @@ ${resumeContent}
     }
   };
 
-  // ✅ Ask next question
+  // ✅ Ask next question (Professional Flow)
   const askNextQuestion = async () => {
-    if (answers.length >= MAX_QUESTIONS) {
-      endInterview();
-      return;
-    }
     setLoadingQuestion(true);
     setCurrentQuestion(null);
 
     const sessionHistory = answers
       .map((a, i) => `Q${i + 1}: ${a.question}\nA${i + 1}: ${a.answer}`)
-      .join("\n") || "None yet";
+      .join("\n") || "No questions asked yet.";
 
     const prompt = `
-You are a professional interviewer.
+You are acting as a professional interviewer conducting a structured, resume-based interview.
+
 Candidate: ${candidateName}
+
 Resume:
 ${resumeContent}
 
-So far:
+Interview Transcript so far:
 ${sessionHistory}
 
-Ask the NEXT question. Be conversational and resume-specific.
-Return ONLY the question text.
-`;
+Follow this professional interview flow strictly:
+
+1. Introduction & Warm-Up
+2. Company & Role Overview
+3. Candidate Background
+4. Technical / Role-Specific Assessment
+5. Behavioral / HR Questions (STAR method)
+6. Candidate Questions
+7. Closing
+
+Rules:
+- Do NOT repeat questions or focus too long on one project/skill.
+- Cover multiple resume areas: education, projects, skills, experience, achievements.
+- Transition naturally through stages (Intro → Closing).
+- Keep it conversational and professional.
+- Plain text only.
+
+Return ONLY the next interviewer statement or question.
+    `;
 
     const q = await generateWithRetry(prompt, "gemini-1.5-flash");
     setCurrentQuestion(q);
@@ -193,7 +217,7 @@ Return ONLY the question text.
     await generateFinalFeedback();
   };
 
-  // ✅ Final evaluation — now ONLY evaluates answers
+  // ✅ Final evaluation
   const generateFinalFeedback = async () => {
     const sessionTranscript = answers
       .map((a, i) => `Q${i + 1}: ${a.question}\nA${i + 1}: ${a.answer}`)
@@ -209,12 +233,11 @@ Interview Transcript:
 ${sessionTranscript || "⚠️ No answers provided by the candidate."}
 
 Rules:
-- Base scores ONLY on answers actually provided. 
-- If no answers are given, all categories except resume_consistency must be scored 0.
-- Resume consistency can still be scored using the resume.
-- Be strict: reward only correct, complete, and relevant answers.
+- Base scores ONLY on answers provided.
+- If no answers given, assign score 0 for all categories except resume_consistency.
+- Be strict and realistic.
 
-Return ONLY a JSON object in this format (no extra text):
+Return ONLY JSON in this format:
 
 {
   "communication": { "score": 0-5, "strengths": "string", "improvements": "string" },
@@ -235,7 +258,6 @@ Return ONLY a JSON object in this format (no extra text):
       setFinalFeedback(parsed);
       setFeedbackError(null);
     } catch (err) {
-      console.error("Final feedback error:", err);
       setFeedbackError("⚠️ AI service overloaded. Please retry.");
     }
   };
@@ -281,8 +303,13 @@ Return ONLY a JSON object in this format (no extra text):
     }
   };
 
+  // ⏱ Remaining time
+  const remainingTime = interviewStartTime
+    ? Math.max(0, Math.floor((INTERVIEW_DURATION - (Date.now() - interviewStartTime)) / 60000))
+    : 0;
+
   return (
-    <div className="p-8">
+    <div className="p-8 overflow-auto">
       <h1 className="text-3xl font-bold mb-4">Resume-Based Interview</h1>
 
       {/* Step 1: Resume Input */}
@@ -315,12 +342,13 @@ Return ONLY a JSON object in this format (no extra text):
               const valid = await validateResume();
               if (valid) {
                 setIsInterviewActive(true);
+                setInterviewStartTime(Date.now());
                 await askNextQuestion();
               } else {
                 setIsStarting(false);
               }
             }}
-            disabled={!resumeContent.trim() || isStarting}
+            disabled={!resumeContent.trim() || isStarting || loadingQuestion}
             className="px-6 py-2 bg-blue-600 text-white rounded-full disabled:bg-gray-400"
           >
             {isStarting
@@ -335,16 +363,12 @@ Return ONLY a JSON object in this format (no extra text):
       {/* Step 2: Active Interview */}
       {isInterviewActive && !interviewComplete && (
         <div className="mt-6">
-          <p className="text-gray-600 mb-2">
-            Question {answers.length + 1} of {MAX_QUESTIONS}
-          </p>
-
+          <p className="text-gray-600 mb-2">Time remaining: {remainingTime} min</p>
           {loadingQuestion ? (
             <p className="text-gray-500">Loading next question...</p>
           ) : (
             <p className="text-lg font-semibold">{currentQuestion}</p>
           )}
-
           <div className="mt-4 flex gap-2 items-center">
             <button
               onClick={islistening ? handleStopListening : handleStartListening}
@@ -365,7 +389,6 @@ Return ONLY a JSON object in this format (no extra text):
               </span>
             )}
           </div>
-
           {islistening && <Waveform />}
           <p className="text-red-600 mt-4">{transcript}</p>
         </div>
@@ -375,17 +398,7 @@ Return ONLY a JSON object in this format (no extra text):
       {interviewComplete && (
         <div className="mt-6 p-6 border rounded-lg bg-gray-50">
           <h2 className="font-bold text-2xl mb-4">Final Evaluation</h2>
-          {feedbackError && (
-            <div>
-              <p className="text-red-600">{feedbackError}</p>
-              <button
-                onClick={generateFinalFeedback}
-                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-full"
-              >
-                Retry Final Evaluation
-              </button>
-            </div>
-          )}
+          {feedbackError && <p className="text-red-600">{feedbackError}</p>}
           {finalFeedback ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
@@ -411,13 +424,9 @@ Return ONLY a JSON object in this format (no extra text):
                   </div>
                 </div>
               ))}
-
-              {/* Conclusion */}
               <div className="col-span-1 md:col-span-2 p-4 border rounded-lg bg-white">
                 <h3 className="font-bold mb-2">Conclusion</h3>
-                <div className="max-h-40 overflow-y-auto">
-                  {finalFeedback.conclusion}
-                </div>
+                <div className="max-h-40 overflow-y-auto">{finalFeedback.conclusion}</div>
               </div>
             </div>
           ) : (
