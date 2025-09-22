@@ -193,7 +193,7 @@ Return ONLY the question text.
     await generateFinalFeedback();
   };
 
-  // ✅ Final evaluation
+  // ✅ Final evaluation — now ONLY evaluates answers
   const generateFinalFeedback = async () => {
     const sessionTranscript = answers
       .map((a, i) => `Q${i + 1}: ${a.question}\nA${i + 1}: ${a.answer}`)
@@ -201,11 +201,18 @@ Return ONLY the question text.
 
     const prompt = `
 You are an expert interviewer. Candidate: ${candidateName}.
+
 Resume:
 ${resumeContent}
 
 Interview Transcript:
-${sessionTranscript}
+${sessionTranscript || "⚠️ No answers provided by the candidate."}
+
+Rules:
+- Base scores ONLY on answers actually provided. 
+- If no answers are given, all categories except resume_consistency must be scored 0.
+- Resume consistency can still be scored using the resume.
+- Be strict: reward only correct, complete, and relevant answers.
 
 Return ONLY a JSON object in this format (no extra text):
 
@@ -275,7 +282,7 @@ Return ONLY a JSON object in this format (no extra text):
   };
 
   return (
-    <div className="p-8 overflow-auto">
+    <div className="p-8">
       <h1 className="text-3xl font-bold mb-4">Resume-Based Interview</h1>
 
       {/* Step 1: Resume Input */}
@@ -380,7 +387,7 @@ Return ONLY a JSON object in this format (no extra text):
             </div>
           )}
           {finalFeedback ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 { key: "communication", label: "Communication Skills" },
                 { key: "technical", label: "Technical Competence" },
@@ -396,10 +403,10 @@ Return ONLY a JSON object in this format (no extra text):
                 >
                   <h3 className="font-semibold">{param.label}</h3>
                   <StarRating score={finalFeedback[param.key]?.score || 0} />
-                  <div className="mt-2 text-sm text-green-600 max-h-24 ">
+                  <div className="mt-2 text-sm text-green-600 max-h-24 overflow-y-auto">
                     <strong>Strengths:</strong> {finalFeedback[param.key]?.strengths}
                   </div>
-                  <div className="mt-1 text-sm text-red-600 max-h-24 ">
+                  <div className="mt-1 text-sm text-red-600 max-h-24 overflow-y-auto">
                     <strong>Improvements:</strong> {finalFeedback[param.key]?.improvements}
                   </div>
                 </div>
