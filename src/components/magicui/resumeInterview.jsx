@@ -125,6 +125,13 @@ function ResumeInterview() {
     return () => clearInterval(timer);
   }, [interviewStartTime, isInterviewActive]);
 
+  // Auto-scroll when new question comes
+  useEffect(() => {
+    if (currentQuestion) {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+  }, [currentQuestion]);
+
   // ✅ Resume Validation
   const validateResume = async () => {
     const keywords = ["experience", "education", "skills", "projects", "internship"];
@@ -364,6 +371,12 @@ Return ONLY JSON in this format:
       {isInterviewActive && !interviewComplete && (
         <div className="mt-6">
           <p className="text-gray-600 mb-2">Time remaining: {remainingTime} min</p>
+          {remainingTime === 2 && (
+            <p className="text-yellow-600 font-semibold">
+              ⚠️ Only 2 minutes left in the interview!
+            </p>
+          )}
+
           {loadingQuestion ? (
             <p className="text-gray-500">Loading next question...</p>
           ) : (
