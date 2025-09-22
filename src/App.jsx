@@ -8,6 +8,8 @@ import { useUser } from "@clerk/clerk-react";
 import Homepage from './components/magicui/homepage';
 import Display from './components/magicui/display';
 import { Helmet } from "react-helmet";
+import ResumeInterview from './components/magicui/resumeInterview'; // new component
+
 
 // ✅ Helmet preload for logo
 <Helmet>
@@ -57,6 +59,8 @@ function App() {
   const [selectedTopic, setSelectedTopic] = useState("");
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [close, setClose] = useState(false);
+  const [resumeContent, setResumeContent] = useState("");
+
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const { user } = useUser();
@@ -232,6 +236,9 @@ Format exactly like this:
             <div className="mt-2 h-12 flex items-center justify-between bg-neutral-300/70 pl-16 pr-10 rounded-full">
               <Link to="/"><h1 className="text-4xl text-black">Interview GPT</h1></Link>
               <div className="flex gap-2 items-center">
+                <Link to="/resume-interview" className="px-3 py-1 text-sm rounded-full bg-blue-500 text-white hover:bg-blue-600">
+    Resume Interview
+  </Link>
                 <label htmlFor="topic-select" className="sr-only">Select a topic</label>
                 <select
                   id="topic-select"
@@ -249,27 +256,30 @@ Format exactly like this:
             </div>
 
             <Routes>
-              <Route path="/" element={<Display />} />
-              <Route path="/interview" element={
-                <Homepage
-                  feedbackloadingStatus={feedbackloadingStatus}
-                  feedback={feedback}
-                  handleStartListening={handleStartListening}
-                  handleStopListening={handleStopListening}
-                  islistening={islistening}
-                  handleReattempt={handleReattempt}
-                  getQuestion={getQuestion}
-                  transcript={transcript}
-                  questionStatus={questionStatus}
-                  Question={Question}
-                  selectedFeedback={selectedFeedback}
-                  close={close}
-                  setClose={handleCloseFeedback} // ✅ pass close handler
-                  topic={selectedTopic}
-                  setSelectedFeedback={setSelectedFeedback}
-                />
-              } />
-            </Routes>
+  <Route path="/" element={<Display />} />
+  <Route path="/interview" element={
+    <Homepage
+      feedbackloadingStatus={feedbackloadingStatus}
+      feedback={feedback}
+      handleStartListening={handleStartListening}
+      handleStopListening={handleStopListening}
+      islistening={islistening}
+      handleReattempt={handleReattempt}
+      getQuestion={getQuestion}
+      transcript={transcript}
+      questionStatus={questionStatus}
+      Question={Question}
+      selectedFeedback={selectedFeedback}
+      close={close}
+      setClose={handleCloseFeedback}
+      topic={selectedTopic}
+    />
+  } />
+  <Route path="/resume-interview" element={
+    <ResumeInterview/>
+  } />
+</Routes>
+
           </div>
         </div>
       </SignedIn>
